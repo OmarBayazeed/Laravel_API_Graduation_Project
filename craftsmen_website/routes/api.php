@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ChartController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\client\ClientAuthController;
 use App\Http\Controllers\CraftsController;
 use App\Http\Controllers\craftsman\CraftsmanAuthController;
@@ -56,8 +57,13 @@ Route::group([
     Route::post('/update_phone', [CraftsmanPhoneAndCityController::class, 'update_phone']);
     Route::post('/get_user', [CraftsmanAuthController::class, 'get_user'])->withoutMiddleware(['assign.guard:craftsman','jwt.auth']);
     Route::post('/add_job_offer_reply', [JobOfferController::class, 'add_reply']);
+    Route::post('/add_job_offer_inspection', [JobOfferController::class, 'add_inspection']);
+    Route::post('/update_job_offer_reply', [JobOfferController::class, 'update_reply']);
+    Route::post('/update_job_offer_inspection', [JobOfferController::class, 'update_inspection']);
     Route::post('/delete_job_offer_reply', [JobOfferController::class, 'delete_reply']);
+    Route::post('/delete_job_offer_inspection', [JobOfferController::class, 'delete_inspection']);
     Route::post('/add_job', [CraftsmanJobsController::class, 'add_job']);
+    Route::post('/add_job_from_inspection', [CraftsmanJobsController::class, 'add_job_from_inspection']);
     Route::post('/finish_job', [CraftsmanJobsController::class, 'finish_job']);
     Route::post('/get_jobs', [CraftsmanJobsController::class, 'get_jobs']);
     Route::post('/get_job', [CraftsmanJobsController::class, 'get_job']);
@@ -79,6 +85,11 @@ Route::group([
     Route::post('/delete_search_image', [SearchImagesController::class, 'delete_search_image']);
     Route::post('/chart', [ChartController::class, 'chart']);
     Route::post('/get_notifications', [NotificationsController::class, 'get_craftsman_notifications']);
+    Route::post('/active_job_cancellation', [CraftsmanJobsController::class, 'craftsman_cancel_job']);
+    Route::post('/get_active_job_cancellation_for_craftsman', [CraftsmanJobsController::class, 'get_cancellation_requests_for_craftsman']);
+    Route::post('/craftsman_response_job_cancellation', [CraftsmanJobsController::class, 'craftsman_response_job_cancellation']);
+    Route::post('/create_chat', [ChatController::class, 'create_chat']);
+    Route::post('/send_message', [ChatController::class, 'sendMessage']);
 });
 
 
@@ -103,6 +114,7 @@ Route::group([
     Route::post('/get_client_job_offers', [JobOfferController::class, 'get_client_job_offers']);
     Route::post('/get_job_offers_by_city_craft', [JobOfferController::class, 'get_city_job_offers']);
     Route::post('/get_job_offer_replies', [JobOfferController::class, 'get_replies']);
+    Route::post('/get_job_offer_inspections', [JobOfferController::class, 'get_inspections']);
     Route::post('/finish_job', [CraftsmanJobsController::class, 'client_finish_job']);
     Route::post('/get_all_client_ratings', [ClientAuthController::class, 'get_all_ratings']);
     Route::post('/add_to_FavoriteList', [FavoriteController::class, 'add_to_FavoriteList']);
@@ -116,6 +128,9 @@ Route::group([
     Route::post('/get_active_jobs', [CraftsmanJobsController::class, 'get_client_active_jobs']);
     Route::post('/get_active_job', [CraftsmanJobsController::class, 'get_client_active_job']);
     Route::post('/get_notifications', [NotificationsController::class, 'get_client_notifications']);
+    Route::post('/active_job_cancellation', [CraftsmanJobsController::class, 'client_cancel_job']);
+    Route::post('/get_active_job_cancellation_for_client', [CraftsmanJobsController::class, 'get_cancellation_requests_for_client']);
+    Route::post('/client_response_job_cancellation', [CraftsmanJobsController::class, 'client_response_job_cancellation']);
 });
 
 Route::post('/get_crafts', [CraftsController::class, 'index']);
