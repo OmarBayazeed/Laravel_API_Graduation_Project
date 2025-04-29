@@ -44,6 +44,7 @@ class CraftsmanAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string',
+            'mobile_token'  => 'required',
         ],[
             'email.required' => 'البريد الإلكتروني غير موجود',
             'email.email' => 'البريد الإلكتروني يجب أن يكون صالح للإستخدام',
@@ -58,6 +59,8 @@ class CraftsmanAuthController extends Controller
             $hashed = $craftsman->password;
             $normalPass = $request->password;
             if(Hash::check($normalPass,$hashed)) {
+                $craftsman->mobile_token = $request->mobile_token;
+                $craftsman->save();
                 $myTTL = 300000;
                 JWTAuth::factory()->setTTL($myTTL);
                 $craftName = Craft::select('name')->where('id' , $craftsman->craft_id)->first();
@@ -200,6 +203,7 @@ class CraftsmanAuthController extends Controller
             'user_id' => 'required|string|max:255',
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100',
+            'mobile_token'  => 'required',
         ],[
             'name.required' => 'الاسم غير موجود',
             'name.string' => 'الاسم يجب أن يكون نَص',
@@ -217,6 +221,8 @@ class CraftsmanAuthController extends Controller
         }
         $craftsman = Craftsman::where('social_id',$request->user_id)->where('social_type','google')->first();
         if ($craftsman) {
+            $craftsman->mobile_token = $request->mobile_token;
+            $craftsman->save();
             $myTTL = 300000;
             JWTAuth::factory()->setTTL($myTTL);
             $craftName = Craft::select('name')->where('id' , $craftsman->craft_id)->first();
@@ -327,6 +333,7 @@ class CraftsmanAuthController extends Controller
             'user_id' => 'required|string|max:255',
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100',
+            'mobile_token'  => 'required',
         ],[
             'name.required' => 'الاسم غير موجود',
             'name.string' => 'الاسم يجب أن يكون نَص',
@@ -345,6 +352,8 @@ class CraftsmanAuthController extends Controller
         }
         $craftsman = Craftsman::where('social_id',$request->user_id)->where('social_type','facebook')->first();
         if ($craftsman) {
+            $craftsman->mobile_token = $request->mobile_token;
+            $craftsman->save();
             $myTTL = 300000;
             JWTAuth::factory()->setTTL($myTTL);
             $craftName = Craft::select('name')->where('id' , $craftsman->craft_id)->first();
@@ -503,7 +512,10 @@ class CraftsmanAuthController extends Controller
             'address' => 'nullable',
             'description' => 'nullable|max:1000',
             'craft_id' => 'required',
-            'image' => 'nullable|image|mimes:png,jpg,jpeg|max:50120',
+            'image' => 'required|image|mimes:png,jpg,jpeg|max:50120',
+            'personal_id' => 'required|image|mimes:png,jpg,jpeg|max:50120',
+            'personal_id_back' => 'required|image|mimes:png,jpg,jpeg|max:50120',
+            'criminal_record' => 'nullable|image|mimes:png,jpg,jpeg|max:50120',
             'phone' => 'required|array',
             'phone.*' => 'numeric|digits:11',
             'whatsapp' => 'nullable|array',
@@ -559,6 +571,39 @@ class CraftsmanAuthController extends Controller
             $imageName = 'craftsman/' . Str::random().'.'.$request->image->getClientOriginalExtension();
             Storage::disk('public')->putFileAs('images/', $request->image, $imageName);
             $craftsman->image = $imageName;
+        }
+        if ($request->hasFile('personal_id')) {
+            if ($craftsman->personal_id) {
+                $exist = Storage::disk('public')->exists('images/'. $craftsman->personal_id);
+                if ($exist) {
+                    $exist = Storage::disk('public')->delete('images/'. $craftsman->personal_id);
+                }
+            }
+            $imageName = 'personal_id/' . Str::random().'.'.$request->personal_id->getClientOriginalExtension();
+            Storage::disk('public')->putFileAs('images/', $request->personal_id, $imageName);
+            $craftsman->personal_id = $imageName;
+        }
+        if ($request->hasFile('personal_id_back')) {
+            if ($craftsman->personal_id_back) {
+                $exist = Storage::disk('public')->exists('images/'. $craftsman->personal_id_back);
+                if ($exist) {
+                    $exist = Storage::disk('public')->delete('images/'. $craftsman->personal_id_back);
+                }
+            }
+            $imageName = 'personal_id_back/' . Str::random().'.'.$request->personal_id_back->getClientOriginalExtension();
+            Storage::disk('public')->putFileAs('images/', $request->personal_id_back, $imageName);
+            $craftsman->personal_id_back = $imageName;
+        }
+        if ($request->hasFile('criminal_record')) {
+            if ($craftsman->criminal_record) {
+                $exist = Storage::disk('public')->exists('images/'. $craftsman->criminal_record);
+                if ($exist) {
+                    $exist = Storage::disk('public')->delete('images/'. $craftsman->criminal_record);
+                }
+            }
+            $imageName = 'criminal_record/' . Str::random().'.'.$request->criminal_record->getClientOriginalExtension();
+            Storage::disk('public')->putFileAs('images/', $request->criminal_record, $imageName);
+            $craftsman->criminal_record = $imageName;
         }
 
         if ($request->has('phone'))

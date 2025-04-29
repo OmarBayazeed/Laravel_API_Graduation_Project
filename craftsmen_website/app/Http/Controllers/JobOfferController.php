@@ -11,6 +11,7 @@ use App\Models\CraftsmanDoneJobs;
 use App\Models\CraftsmanDoneJobsRating;
 use App\Models\JobsOffer;
 use App\Models\JobsOfferImage;
+use App\Models\JobsOfferInspection;
 use App\Models\JobsOfferReply;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -461,6 +462,62 @@ class JobOfferController extends Controller
         }
     }
 
+    public function update_reply(Request $request)
+    {
+        $craftsman_id = $request->craftsman_id;
+        if (!$craftsman_id) {
+            return response()->json(['message' => 'you should give me the id of the craftsman in parameter(craftsman_id)','status' => false],404);
+        }
+        $reply_id = $request->reply_id;
+        if (!$reply_id) {
+            return response()->json(['message' => 'you should give me the id of the reply in parameter(reply_id)','status' => false],404);
+        }
+        $validator = Validator::make($request->all(), [
+            'offered_price' => 'required|numeric',
+            'description' => 'required|max:1000',
+            'type_of_pricing' => 'required',
+        ],[
+            'offered_price.required' => 'يجب أن تُرسل السعر المعروض',
+            'offered_price.numeric' => 'يجب أن يكون السعر مكون من أرقام فقط',
+            'description.required' => 'يجب أن تُرسل الوصف',
+            'description.max:1000' => 'الوصف يجب أن يكون أقل من 1000 حرف',
+            'type_of_pricing.required' => 'يجب أن تُرسل نوع التسعيرة',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([$validator->errors(),'status'=>false],401);
+        }
+
+        $craftsman = Craftsman::find($craftsman_id);
+        if (!$craftsman) {
+            return response()->json(['message'=>'craftsman not found','status'=>false,],404);
+        }
+
+        $job_offer_reply = JobsOfferReply::find($reply_id);
+        if (!$job_offer_reply) {
+            return response()->json(['message'=>'the job offer reply not found','status'=>false,],404);
+        }
+
+        if ($job_offer_reply->craftsman_id != $craftsman_id) {
+            return response()->json(['message'=>'this reply is not for this craftsman','status'=>false,],404);
+        }
+
+        $job_offer_reply->fill($request->post())->update();
+
+        if ($job_offer_reply) {
+            return response()->json([
+            'message' => 'تم تعديل ردك على هذا العرض بنجاح',
+            'status' => true,
+            ],201);
+        }
+        else
+        {
+            return response()->json([
+                'message' => 'لم نستطع تعديل ردك على هذا العرض',
+                'status' => false,
+            ],400);
+        }
+    }
+
     public function get_replies(Request $request)
     {
         $job_offer_id = $request->job_offer_id;
@@ -544,12 +601,242 @@ class JobOfferController extends Controller
         if (!$job_offer_id) {
             return response()->json(['message' => 'you should give me the id of the job_offer in parameter(job_offer_id)','status' => false],404);
         }
-        $oldReply = JobsOfferReply::where('craftsman_id',$craftsman_id)->where('job_offer_id',$job_offer_id);
+        $oldReply = JobsOfferReply::where('craftsman_id',$craftsman_id)->where('job_offer_id',$job_offer_id)->first();
         if ($oldReply) {
             $oldReply->delete();
             return response()->json(['message' => 'تم إزالة ردك بنجاح','status' => true],200);
         }else {
             return response()->json(['message' => 'لم نستطع إزالة ردك','status' => false],400);
+        }
+    }
+
+    public function add_inspection(Request $request)
+    {
+        $craftsman_id = $request->craftsman_id;
+        if (!$craftsman_id) {
+            return response()->json(['message' => 'you should give me the id of the craftsman in parameter(craftsman_id)','status' => false],404);
+        }
+        $job_offer_id = $request->job_offer_id;
+        if (!$job_offer_id) {
+            return response()->json(['message' => 'you should give me the id of the job offer in parameter(job_offer_id)','status' => false],404);
+        }
+        $validator = Validator::make($request->all(), [
+            'offered_price' => 'required|numeric',
+            'inspection_price' => 'required|numeric',
+            'description' => 'required|max:1000',
+            'start_date' => 'required',
+            'end_date' => 'required',
+            'type_of_pricing' => 'required',
+        ],[
+            'offered_price.required' => 'يجب أن تُرسل السعر المبدئي',
+            'offered_price.numeric' => 'يجب أن يكون السعر المبدئي مكون من أرقام فقط',
+            'inspection_price.required' => 'يجب أن تُرسل سعر المعاينة',
+            'inspection_price.numeric' => 'يجب أن يكون سعر المعاينة مكون من أرقام فقط',
+            'description.required' => 'يجب أن تُرسل الوصف',
+            'description.max:1000' => 'الوصف يجب أن يكون أقل من 1000 حرف',
+            'start_date.required' => 'يجب أن تُرسل تاريخ البداية',
+            'end_date.required' => 'يجب أن تُرسل تاريخ الإنتهاء',
+            'type_of_pricing.required' => 'يجب أن تُرسل نوع التسعيرة',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([$validator->errors(),'status'=>false],401);
+        }
+
+        $craftsman = Craftsman::find($craftsman_id);
+        if (!$craftsman) {
+            return response()->json(['message'=>'craftsman not found','status'=>false,],404);
+        }
+
+        $job_offer = JobsOffer::find($job_offer_id);
+        if (!$job_offer) {
+            return response()->json(['message'=>'the job offer not found','status'=>false,],404);
+        }
+        $oldinspection = JobsOfferInspection::where('job_offer_id',$job_offer_id)->where('craftsman_id',$craftsman_id)->first();
+        if ($oldinspection) {
+            return response()->json([
+            'message' => 'لقد قدمت طلب معاينة لهذا العرض بالفعل',
+            'status' => false,
+            ],400);
+        }
+
+        $job_offer_inspection = new JobsOfferInspection();
+
+        $job_offer_inspection->offered_price = $request->offered_price;
+        $job_offer_inspection->inspection_price = $request->inspection_price;
+        $job_offer_inspection->description = $request->description;
+        $job_offer_inspection->type_of_pricing = $request->type_of_pricing;
+        $job_offer_inspection->start_date = $request->start_date;
+        $job_offer_inspection->end_date = $request->end_date;
+        $job_offer_inspection->job_offer_id = $job_offer_id;
+        $job_offer_inspection->craftsman_id = $craftsman_id;
+        $job_offer_inspection->save();
+
+        if ($job_offer_inspection) {
+            return response()->json([
+            'message' => 'تم تسجيل طلب المعاينة على هذا العرض بنجاح',
+            'status' => true,
+            ],201);
+        }
+        else
+        {
+            return response()->json([
+                'message' => 'لم نستطع تسجيل طلب المعاينة على هذا العرض',
+                'status' => false,
+            ],400);
+        }
+    }
+
+    public function update_inspection(Request $request)
+    {
+        $craftsman_id = $request->craftsman_id;
+        if (!$craftsman_id) {
+            return response()->json(['message' => 'you should give me the id of the craftsman in parameter(craftsman_id)','status' => false],404);
+        }
+        $inspection_id = $request->inspection_id;
+        if (!$inspection_id) {
+            return response()->json(['message' => 'you should give me the id of the inspection in parameter(inspection_id)','status' => false],404);
+        }
+        $validator = Validator::make($request->all(), [
+            'offered_price' => 'required|numeric',
+            'inspection_price' => 'required|numeric',
+            'description' => 'required|max:1000',
+            'start_date' => 'required',
+            'end_date' => 'required',
+            'type_of_pricing' => 'required',
+        ],[
+            'offered_price.required' => 'يجب أن تُرسل السعر المبدئي',
+            'offered_price.numeric' => 'يجب أن يكون السعر المبدئي مكون من أرقام فقط',
+            'inspection_price.required' => 'يجب أن تُرسل سعر المعاينة',
+            'inspection_price.numeric' => 'يجب أن يكون سعر المعاينة مكون من أرقام فقط',
+            'description.required' => 'يجب أن تُرسل الوصف',
+            'description.max:1000' => 'الوصف يجب أن يكون أقل من 1000 حرف',
+            'start_date.required' => 'يجب أن تُرسل تاريخ البداية',
+            'end_date.required' => 'يجب أن تُرسل تاريخ الإنتهاء',
+            'type_of_pricing.required' => 'يجب أن تُرسل نوع التسعيرة',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([$validator->errors(),'status'=>false],401);
+        }
+
+        $craftsman = Craftsman::find($craftsman_id);
+        if (!$craftsman) {
+            return response()->json(['message'=>'craftsman not found','status'=>false,],404);
+        }
+
+        $job_offer_inspection = JobsOfferInspection::find($inspection_id);
+        if (!$job_offer_inspection) {
+            return response()->json(['message'=>'the job offer inspection not found','status'=>false,],404);
+        }
+
+        if ($job_offer_inspection->craftsman_id != $craftsman_id) {
+            return response()->json(['message'=>'this inspection is not for this craftsman','status'=>false,],404);
+        }
+
+        $job_offer_inspection->fill($request->post())->update();
+
+        if ($job_offer_inspection) {
+            return response()->json([
+            'message' => 'تم تعديل طلب المعاينة على هذا العرض بنجاح',
+            'status' => true,
+            ],200);
+        }
+        else
+        {
+            return response()->json([
+                'message' => 'لم نستطع تعديل طلب المعاينة على هذا العرض',
+                'status' => false,
+            ],400);
+        }
+    }
+
+    public function get_inspections(Request $request)
+    {
+        $job_offer_id = $request->job_offer_id;
+        if (!$job_offer_id) {
+            return response()->json(['message' => 'you should give me the id of the job offer in parameter(job_offer_id)','status' => false],404);
+        }
+        $pagination = $request->pagination;
+        if (!$pagination) {
+            return response()->json(['message' => 'you should give me the value of the pagination in parameter(pagination)','status' => false],404);
+        }
+
+        $job_offer = JobsOffer::find($job_offer_id);
+        if (!$job_offer) {
+            return response()->json(['message'=>'job offer not found','status'=>false,],404);
+        }
+        $inspections =JobsOfferInspection::select()->orderBy('id', 'desc')->where('job_offer_id',$job_offer_id)->paginate($pagination)->through(function($rp) {
+            $craftsman = Craftsman::find($rp->craftsman_id);
+            if ($craftsman) {
+                $rp['craftsman_name'] = $craftsman->name;
+                $rp['craftsman_image'] = $craftsman->image;
+                // ratings
+                $done_jobs = CraftsmanDoneJobs::where('craftsman_id' , $rp->craftsman_id)->where('status','finished')->get();
+                if ($done_jobs) {
+                    $Ratings =false;
+                    foreach ($done_jobs as $done) {
+                        $Ratings[] = CraftsmanDoneJobsRating::select('rating')->where('craftsmanDoneJob_id' , $done->id)->get();
+                    }
+                    if ($Ratings) {
+                        foreach ($Ratings as $rating) {
+                            $totalrates = array_sum(array_map("count", [$rating]));
+                            for ($j=0; $j < $totalrates; $j++) {
+                                $ratings_values[] = $rating[$j]['rating'];
+                            }
+                        }
+                        if (isset($ratings_values)) {
+                            $ratingValuesSum = array_sum($ratings_values);
+                            $ratingValuesCount = array_sum(array_map("count", $Ratings));
+                            $avgRating = round($ratingValuesSum/$ratingValuesCount);
+                            if (!$avgRating) {
+                                $avgRating = null;
+                            }
+                        }else {
+                            $avgRating = null;
+                            $ratingValuesCount = null;
+                        }
+                    }else {
+                        $avgRating = null;
+                        $ratingValuesCount = null;
+                    }
+                }else {
+                    $avgRating = null;
+                    $ratingValuesCount = null;
+                }
+                $rp['average_rating'] = $avgRating;
+                $rp['number_of_ratings'] = $ratingValuesCount;
+            }else{
+                $rp['craftsman_name'] = null;
+                $rp['craftsman_image'] = null;
+                $rp['average_rating'] = null;
+                $rp['number_of_ratings'] = null;
+            }
+            return $rp;
+        });
+        if ($inspections) {
+            return response()->json(['data' => ['job_offer_title' => $job_offer->title,'inspections' => $inspections],'status' => true],200);
+        }
+        else
+        {
+            return response()->json(['message' => 'لا يوجد طلبات معاينة على هذا العرض','status' => false]);
+        }
+    }
+
+    public function delete_inspection(Request $request)
+    {
+        $craftsman_id = $request->craftsman_id;
+        if (!$craftsman_id) {
+            return response()->json(['message' => 'you should give me the id of the craftsman in parameter(craftsman_id)','status' => false],404);
+        }
+        $job_offer_id = $request->job_offer_id;
+        if (!$job_offer_id) {
+            return response()->json(['message' => 'you should give me the id of the job_offer in parameter(job_offer_id)','status' => false],404);
+        }
+        $oldInspection = JobsOfferInspection::where('craftsman_id',$craftsman_id)->where('job_offer_id',$job_offer_id)->first();
+        if ($oldInspection) {
+            $oldInspection->delete();
+            return response()->json(['message' => 'تم إزالة طلب المعاينة بنجاح','status' => true],200);
+        }else {
+            return response()->json(['message' => 'لم نجد طلب المعاينة','status' => false],400);
         }
     }
 

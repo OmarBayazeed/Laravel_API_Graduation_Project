@@ -28,6 +28,10 @@ class CraftsmanJob extends Model
         return $this->belongsTo(Craftsman::class, 'craftsman_id', 'id');
     }
 
+    public function client(){
+        return $this->belongsTo(Client::class, 'client_id', 'id');
+    }
+
     public function job_images(){
         return $this->hasMany(CraftsmanJobImage::class, 'job_id', 'id');
     }

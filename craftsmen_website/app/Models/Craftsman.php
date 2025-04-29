@@ -25,9 +25,11 @@ class Craftsman extends Authenticatable implements JWTSubject
         'craft_id',
         'social_id',
         'social_type',
+        'mobile_token',
     ];
     protected $hidden = [
         'password',
+        'mobile_token',
     ];
 
     public function phones(){
@@ -74,5 +76,9 @@ class Craftsman extends Authenticatable implements JWTSubject
 
     public function getJWTCustomClaims() {
         return [];
+    }
+
+    public function canceled_active_jobs(){
+        return $this->hasMany(CraftsmanJobCancel::class, 'craftsman_id', 'id');
     }
 }

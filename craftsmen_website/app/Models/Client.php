@@ -22,10 +22,12 @@ class Client extends Authenticatable implements JWTSubject
         'image',
         'social_id',
         'social_type',
+        'mobile_token',
     ];
 
     protected $hidden = [
         'password',
+        'mobile_token',
     ];
 
 
@@ -43,6 +45,10 @@ class Client extends Authenticatable implements JWTSubject
 
     public function xxcraftsmen_rating_clients(){
         return $this->belongsToMany(Craftsman::class, 'clients_ratings', 'client_id', 'craftsman_id', 'id', 'id');
+    }
+
+    public function canceled_active_jobs(){
+        return $this->hasMany(ClientJobCancel::class, 'client_id', 'id');
     }
 
 

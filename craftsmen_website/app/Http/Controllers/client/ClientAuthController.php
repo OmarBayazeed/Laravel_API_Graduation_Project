@@ -42,6 +42,7 @@ class ClientAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string',
+            'mobile_token'  => 'required',
         ],[
             'email.required' => 'البريد الإلكتروني غير موجود',
             'email.email' => 'البريد الإلكتروني يجب أن يكون صالح للإستخدام',
@@ -56,6 +57,8 @@ class ClientAuthController extends Controller
             $hashed = $client->password ;
             $normalPass = $request->password;
             if(Hash::check($normalPass,$hashed)) {
+                $client->mobile_token = $request->mobile_token;
+                $client->save();
                 $myTTL = 300000;
                 JWTAuth::factory()->setTTL($myTTL);
 
@@ -132,6 +135,7 @@ class ClientAuthController extends Controller
             'user_id' => 'required|string|max:255',
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100',
+            'mobile_token'  => 'required',
         ],[
             'name.required' => 'الاسم غير موجود',
             'name.string' => 'الاسم يجب أن يكون نَص',
@@ -149,6 +153,8 @@ class ClientAuthController extends Controller
         }
         $user = Client::where('social_id',$request->user_id)->where('social_type','google')->first();
         if ($user) {
+            $user->mobile_token = $request->mobile_token;
+            $user->save();
             $myTTL = 300000;
             JWTAuth::factory()->setTTL($myTTL);
 
@@ -192,6 +198,7 @@ class ClientAuthController extends Controller
             'user_id' => 'required|string|max:255',
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100',
+            'mobile_token'  => 'required',
         ],[
             'name.required' => 'الاسم غير موجود',
             'name.string' => 'الاسم يجب أن يكون نَص',
@@ -209,6 +216,8 @@ class ClientAuthController extends Controller
         }
         $user = Client::where('social_id',$request->user_id)->where('social_type','facebook')->first();
         if ($user) {
+            $user->mobile_token = $request->mobile_token;
+            $user->save();
             $myTTL = 300000;
             JWTAuth::factory()->setTTL($myTTL);
 
