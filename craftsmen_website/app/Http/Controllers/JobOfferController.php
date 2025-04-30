@@ -821,6 +821,20 @@ class JobOfferController extends Controller
         }
     }
 
+    public function get_one_inspection(Request $request)
+    {
+        $inspection_id = $request->inspection_id;
+        if (!$inspection_id) {
+            return response()->json(['message' => 'you should give me the id of the job offer in parameter(inspection_id)','status' => false],404);
+        }
+
+        $inspection = JobsOfferInspection::where('id',$inspection_id)->with('job_offer')->first();
+        if (!$inspection) {
+            return response()->json(['message'=>'inspection not found','status'=>false,],404);
+        }
+        return response()->json(['data' => $inspection,'status' => true],200);
+    }
+
     public function delete_inspection(Request $request)
     {
         $craftsman_id = $request->craftsman_id;
